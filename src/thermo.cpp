@@ -1,27 +1,25 @@
-
-
-// Enable debug prints to serial monitor
-#define DEBUG 1
-
-#define TX_PIN                6
-#define ONE_WIRE_BUS          3
-#define LED                   13
-#define VREF                  1.099
-
 //liste des bibliothèques
 #include <OneWire.h>
 #include <VirtualWire.h>
 #include <Arduino.h>
 #include <LowPower.h>
 
-//Liste des fonctions
-float readDS18B20();
-void setup();
-void loop();
-unsigned int getBatteryCapacity();
-float getTemp();
+// Enable debug prints to serial monitor
+#define DEBUG 1
+#define TX_PIN                6
+#define ONE_WIRE_BUS          3
+#define LED                   13
+#define VREF                  1.099
 
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+
+/* Code de retour de la fonction getTemperature() */
+enum DS18B20_RCODES {
+  READ_OK,  // Lecture ok
+  NO_SENSOR_FOUND,  // Pas de capteur
+  INVALID_ADDRESS,  // Adresse reçue invalide
+  INVALID_SENSOR  // Capteur invalide (pas un DS18B20)
+};
 
 struct batteryCapacity
 {
@@ -29,7 +27,7 @@ struct batteryCapacity
   int capacity;
 };
 
-struct ThermostatData
+struct ThermometerData
 {
   float temp;
   int batt;
@@ -111,60 +109,60 @@ unsigned int getBatteryCapacity() {
   return 0;
 }
 
-float readDS18B20() {
-  static float lastTemperature;
+/**
+ * Fonction de lecture de la température via un capteur DS18B20.
+ */
+byte getTemperature(float *temperature, byte reset_search) {
+  byte data[9], addr[8];
+  // data[] : Données lues depuis le scratchpad
+  // addr[] : Adresse du module 1-Wire détecté
 
-  float temperature = getTemp();
-
-  // Only send data if temperature has changed and no error
-  if (temperature == -127.00) {
-    if (DEBUG) {
-      Serial.println("DS18B20: read failed");
-    }
-  }
-  if (temperature != -127.00 && temperature != 85.00) {
-    // Save new temperatures for next compare
-    lastTemperature = temperature;
-  }
-  return lastTemperature;
-}
-float getTemp()
-{
-  //returns the temperature from one DS18S20 in DEG Celsius
-  byte data[12];
-  byte addr[8];
-  if ( !ds.search(addr)) {
-    //no more sensors on chain, reset search
+  /* Reset le bus 1-Wire ci nécessaire (requis pour la lecture du premier capteur) */
+  if (reset_search) {
     ds.reset_search();
-    return -1000;
   }
-  if ( OneWire::crc8( addr, 7) != addr[7]) {
-    if (DEBUG) {
-      Serial.println("CRC is not valid!");
-    }
-    return -1000;
+
+  /* Recherche le prochain capteur 1-Wire disponible */
+  if (!ds.search(addr)) {
+    // Pas de capteur
+    return NO_SENSOR_FOUND;
   }
-  if ( addr[0] != 0x10 && addr[0] != 0x28) {
-    if (DEBUG) {
-      Serial.print("Device is not recognized");
-    }
-    return -1000;
+
+  /* Vérifie que l'adresse a été correctement reçue */
+  if (OneWire::crc8(addr, 7) != addr[7]) {
+    // Adresse invalide
+    return INVALID_ADDRESS;
   }
+
+  /* Vérifie qu'il s'agit bien d'un DS18B20 */
+  if (addr[0] != 0x28) {
+    // Mauvais type de capteur
+    return INVALID_SENSOR;
+  }
+
+  /* Reset le bus 1-Wire et sélectionne le capteur */
   ds.reset();
   ds.select(addr);
-  ds.write(0x44,1); // start conversion, with parasite power on at the end
-  //byte present = ds.reset();
+
+  /* Lance une prise de mesure de température et attend la fin de la mesure */
+  ds.write(0x44, 1);
+  delay(800);
+
+  /* Reset le bus 1-Wire, sélectionne le capteur et envoie une demande de lecture du scratchpad */
+  ds.reset();
   ds.select(addr);
-  ds.write(0xBE); // Read Scratchpad
-  for (int i = 0; i < 9; i++) { // we need 9 bytes
+  ds.write(0xBE);
+
+ /* Lecture du scratchpad */
+  for (byte i = 0; i < 9; i++) {
     data[i] = ds.read();
   }
-  ds.reset_search();
-  byte MSB = data[1];
-  byte LSB = data[0];
-  float tempRead = ((MSB << 8) | LSB); //using two's compliment
-  float TemperatureSum = tempRead / 16;
-  return TemperatureSum;
+
+  /* Calcul de la température en degré Celsius */
+  *temperature = (int16_t) ((data[1] << 8) | data[0]) * 0.0625;
+
+  // Pas d'erreur
+  return READ_OK;
 }
 
 void lowPowerSleep(int minutes)
@@ -178,10 +176,17 @@ void lowPowerSleep(int minutes)
 
 void loop()
 {
-
   int batteryLevel = getBatteryCapacity();
-  float temperature = readDS18B20();
-  ThermostatData dataToSend;
+  float temperature;
+
+  if (getTemperature(&temperature, true) != READ_OK) {
+    if (DEBUG) {
+      Serial.println(F("Erreur de lecture du capteur"));
+    }
+    return;
+  }
+
+  ThermometerData dataToSend;
   dataToSend.batt = batteryLevel;
   dataToSend.temp = temperature;
 
