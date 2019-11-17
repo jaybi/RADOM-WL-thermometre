@@ -1,59 +1,38 @@
-/**
- * The MySensors Arduino library handles the wireless radio link and protocol
- * between your home built sensors/actuators and HA controller of choice.
- * The sensors forms a self healing radio network with optional repeaters. Each
- * repeater and gateway builds a routing tables in EEPROM which keeps track of the
- * network topology allowing messages to be routed to nodes.
- *
- * Created by Henrik Ekblad <henrik.ekblad@mysensors.org>
- * Copyright (C) 2013-2015 Sensnology AB
- * Full contributor list: https://github.com/mysensors/Arduino/graphs/contributors
- *
- * Documentation: http://www.mysensors.org
- * Support Forum: http://forum.mysensors.org
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * version 2 as published by the Free Software Foundation.
- *
- *******************************
- *
- * DESCRIPTION
- *
- * Example sProcesseurketch showing how to send in DS1820B OneWire temperature readings back to the controller
- * http://www.mysensors.org/build/temp
- */
 
 
 // Enable debug prints to serial monitor
-//#define MY_DEBUG
+#define DEBUG 1
 
-// Enable and select radio type attached
-#define MY_RADIO_NRF24
-//#define MY_RADIO_RFM69
-
-#define MY_RF24_CE_PIN        7
-#define MY_RF24_CS_PIN        8
+#define TX_PIN                6
 #define ONE_WIRE_BUS          3
 #define LED                   13
-#define SLEEP_TIME            900000L
-#define COMPARE_TEMP          0
 #define VREF                  1.099
 
-#include <Arduino.h>
-#include <MySensors.h>
-#include <DallasTemperature.h>
+//liste des bibliothèques
 #include <OneWire.h>
+#include <VirtualWire.h>
+#include <Arduino.h>
+#include <LowPower.h>
 
-OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
-DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Temperature.
+//Liste des fonctions
+float readDS18B20();
+void setup();
+void loop();
+unsigned int getBatteryCapacity();
+float getTemp();
 
-#define CHILD_ID_TEMP         0
+OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
 struct batteryCapacity
 {
   float voltage;
   int capacity;
+};
+
+struct ThermostatData
+{
+  float temp;
+  int batt;
 };
 
 const batteryCapacity remainingCapacity[] = {
@@ -88,75 +67,43 @@ const batteryCapacity remainingCapacity[] = {
 
 const int ncell = sizeof(remainingCapacity) / sizeof(struct batteryCapacity);
 
-void before()
-{
-  Serial.print("MYSENSORS DS18B20 Temperature sensor: ");
-  // Startup up the OneWire library
-  sensors.begin();
-  Serial.println("OK");
-}
-
-void setup()
-{
+void setup() {
   Serial.begin(115200);
-  Serial.print("Setup");
-  // requestTemperatures() will not block current thread
-  sensors.setWaitForConversion(false);
-  Serial.println(" OK");
+  if (DEBUG) {
+    Serial.print("Setup");
+  }
+  vw_set_tx_pin(TX_PIN);
+  vw_setup(2000);
+  if (DEBUG) {
+    Serial.println(" OK");
+  }
 }
 
-void presentation() {
-  Serial.print("Presentation");
-  // Send the sketch version information to the gateway and Controller
-  sendSketchInfo("DS18B20 Temperature Sensor", "1.1");
 
-  // Present all sensors to controller
-  present(CHILD_ID_TEMP, S_TEMP);
-  Serial.println(" OK");
-}
-
-unsigned int analogReadReference(void)
-{
-  /* Elimine toutes charges rÃ©siduelles */
-  ADMUX = 0x4F;
-  delayMicroseconds(5);
-  /* SÃ©lectionne la rÃ©fÃ©rence interne Ã  1.1 volts comme point de mesure, avec comme limite haute VCC */
-  ADMUX = 0x4E;
-  delayMicroseconds(200);
-  /* Active le convertisseur analogique -> numÃ©rique */
-  ADCSRA |= (1 << ADEN);
-  /* Lance une conversion analogique -> numÃ©rique */
-  ADCSRA |= (1 << ADSC);
-  /* Attend la fin de la conversion */
-  while(ADCSRA & (1 << ADSC));
-  /* RÃ©cupÃ¨re le rÃ©sultat de la conversion */
-  return ADCL | (ADCH << 8);
-}
-
-unsigned int getBatteryCapacity(void)
-{
-//  float voltage = (1023 * VREF) / analogReadReference();
+unsigned int getBatteryCapacity() {
+  //  float voltage = (1023 * VREF) / analogReadReference();
   analogReference(INTERNAL);
   analogRead(0);
   delay(1);
   unsigned int adc = analogRead(0);
-#ifdef MY_DEBUG
-  Serial.print("ADC: ");
-  Serial.println(adc);
-#endif
+  if (DEBUG) {
+    Serial.print("ADC: ");
+    Serial.println(adc);
+  }
+
   float voltage = adc * VREF / 1023 / 0.248;
-#ifdef MY_DEBUG
-  Serial.print("VCC: ");
-  Serial.println(voltage, 3);
-#endif
+  if (DEBUG) {
+    Serial.print("VCC: ");
+    Serial.println(voltage, 3);
+  }
   for (int i = 0 ; i < ncell ; i++){
-#ifdef MY_DEBUG
-    Serial.print(i);
-    Serial.print(" : ");
-    Serial.print(remainingCapacity[i].voltage);
-    Serial.print(" | ");
-    Serial.println(remainingCapacity[i].capacity);
-#endif
+    if (DEBUG) {
+      Serial.print(i);
+      Serial.print(" : ");
+      Serial.print(remainingCapacity[i].voltage);
+      Serial.print(" | ");
+      Serial.println(remainingCapacity[i].capacity);
+    }
     if (voltage > remainingCapacity[i].voltage) {
       return remainingCapacity[i].capacity;
     }
@@ -164,49 +111,91 @@ unsigned int getBatteryCapacity(void)
   return 0;
 }
 
-void readDS18B20(void)
-{
-  MyMessage tempMsg(0,V_TEMP);
+float readDS18B20() {
   static float lastTemperature;
 
-  // Fetch temperatures from Dallas sensors
-  sensors.requestTemperatures();
-
-  // query conversion time and sleep until conversion completed
-  int16_t conversionTime = sensors.millisToWaitForConversion(sensors.getResolution());
-  // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
-  sleep(conversionTime);
-
-  // Read temperatures and send them to controller
-  // Fetch and round temperature to one decimal
-  float temperature = static_cast<float>(static_cast<int>((getControllerConfig().isMetric ? sensors.getTempCByIndex(0) : sensors.getTempFByIndex(0)) * 10.)) / 10.;
+  float temperature = getTemp();
 
   // Only send data if temperature has changed and no error
   if (temperature == -127.00) {
-    Serial.println("DS18B20: read failed");
+    if (DEBUG) {
+      Serial.println("DS18B20: read failed");
+    }
   }
-  #if COMPARE_TEMP == 1
-  if (lastTemperature != temperature && temperature != -127.00 && temperature != 85.00) {
-  #else
   if (temperature != -127.00 && temperature != 85.00) {
-  #endif
-    // Send in the new temperature
-    send(tempMsg.setSensor(CHILD_ID_TEMP).set(temperature, 1));
     // Save new temperatures for next compare
     lastTemperature = temperature;
-    Serial.print("transmitted temperature OK: ");
-    Serial.print(temperature);
-    Serial.println("Â°C");
+  }
+  return lastTemperature;
+}
+float getTemp()
+{
+  //returns the temperature from one DS18S20 in DEG Celsius
+  byte data[12];
+  byte addr[8];
+  if ( !ds.search(addr)) {
+    //no more sensors on chain, reset search
+    ds.reset_search();
+    return -1000;
+  }
+  if ( OneWire::crc8( addr, 7) != addr[7]) {
+    if (DEBUG) {
+      Serial.println("CRC is not valid!");
+    }
+    return -1000;
+  }
+  if ( addr[0] != 0x10 && addr[0] != 0x28) {
+    if (DEBUG) {
+      Serial.print("Device is not recognized");
+    }
+    return -1000;
+  }
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44,1); // start conversion, with parasite power on at the end
+  //byte present = ds.reset();
+  ds.select(addr);
+  ds.write(0xBE); // Read Scratchpad
+  for (int i = 0; i < 9; i++) { // we need 9 bytes
+    data[i] = ds.read();
+  }
+  ds.reset_search();
+  byte MSB = data[1];
+  byte LSB = data[0];
+  float tempRead = ((MSB << 8) | LSB); //using two's compliment
+  float TemperatureSum = tempRead / 16;
+  return TemperatureSum;
+}
+
+void lowPowerSleep(int minutes)
+{
+  int seconds = minutes * 60;
+  int sleeps = seconds / 8;
+  for (int i = 0 ; i < sleeps ; i++) {
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
   }
 }
 
 void loop()
 {
-  readDS18B20();
-  sleep(SLEEP_TIME);
+
   int batteryLevel = getBatteryCapacity();
-  sendBatteryLevel(batteryLevel);
-  Serial.print("transmitted battery level OK: ");
-  Serial.print(batteryLevel);
-  Serial.println("%");
+  float temperature = readDS18B20();
+  ThermostatData dataToSend;
+  dataToSend.batt = batteryLevel;
+  dataToSend.temp = temperature;
+
+  vw_send((byte*) &dataToSend, sizeof(dataToSend)); // On envoie le message
+  vw_wait_tx(); // On attend la fin de l'envoi
+  if (DEBUG) {
+    Serial.print("transmitted battery level OK: ");
+    Serial.print(batteryLevel);
+    Serial.println("%");
+    Serial.print("transmitted temperature OK: ");
+    Serial.print(temperature);
+    Serial.println("Â°C");
+  }
+
+  lowPowerSleep(15);
+
 }
