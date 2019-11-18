@@ -202,5 +202,4 @@ void loop()
   }
 
   lowPowerSleep(15);
-
 }
