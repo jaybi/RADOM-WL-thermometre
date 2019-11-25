@@ -65,6 +65,8 @@ const batteryCapacity remainingCapacity[] = {
 
 const int ncell = sizeof(remainingCapacity) / sizeof(struct batteryCapacity);
 
+//SETUP****************************************************
+// cppcheck-suppress unusedFunction
 void setup() {
   Serial.begin(115200);
   if (DEBUG) {
@@ -174,6 +176,8 @@ void lowPowerSleep(int minutes)
   }
 }
 
+//LOOP****************************************************
+// cppcheck-suppress unusedFunction
 void loop()
 {
   int batteryLevel = getBatteryCapacity();
