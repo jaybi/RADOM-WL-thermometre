@@ -1,8 +1,8 @@
 /*
 Copyright (c) 2007, Jim Studt  (original old version - many contributors since)
 
-Slightly modified by josh on 6/22/2014 to add support for internal pull-up resistors. 
- 
+Slightly modified by josh on 6/22/2014 to add support for internal pull-up resistors.
+
 More info at:
 
   http://wp.josh.com/2014/06/21/no-external-pull-up-needed-for-ds18b20-temp-sensor
@@ -134,16 +134,16 @@ OneWire::OneWire(uint8_t pin)
 #endif
 }
 
-static uint8_t busFailFlag; 	// Set to one if bus failed to return to high via pull-up	
+static uint8_t busFailFlag; 	// Set to one if bus failed to return to high via pull-up
 
 // Perform the onewire reset function.  1=Ok to proceed, 0=no devices found or possible short to ground on bus
 
-// First we will send a reset pulse and see if any slaves send back 
-// a presence pulse. If not, then we return 0. 
+// First we will send a reset pulse and see if any slaves send back
+// a presence pulse. If not, then we return 0.
 
 // Next we check to make sure that what we saw was really a presence
-// by checking to see if the bus returns to high by the pull-up. 
-// If not, then their might be a short to ground so we return a 0. 
+// by checking to see if the bus returns to high by the pull-up.
+// If not, then their might be a short to ground so we return a 0.
 
 // Only if we both get a presence pulse, and we are able to see the bus return to high,
 // then we return a 1 to indicate ok to proceed.
@@ -156,53 +156,51 @@ uint8_t OneWire::reset(void)
 
 	IO_REG_TYPE mask = bitmask;
 	volatile IO_REG_TYPE *reg IO_REG_ASM = baseReg;
-	
+
 	// First drive the bus low to send reset pulse
-	
+
 	noInterrupts();
-	DIRECT_WRITE_LOW(reg, mask); 	 
+	DIRECT_WRITE_LOW(reg, mask);
 	DIRECT_MODE_OUTPUT(reg, mask);	 // drive output low
 	interrupts();
-	delayMicroseconds(480);			 // Wait for salves to see the reset pulse (Trstl) 
+	delayMicroseconds(480);			 // Wait for salves to see the reset pulse (Trstl)
 	noInterrupts();
-	DIRECT_MODE_INPUT(reg, mask);	 // Stop driving high 
+	DIRECT_MODE_INPUT(reg, mask);	 // Stop driving high
 	DIRECT_WRITE_HIGH( reg , mask ); // enable pull-up resistor
-	
-	delayMicroseconds(70);			 // give the slaves a chance to pull bus low 
+
+	delayMicroseconds(70);			 // give the slaves a chance to pull bus low
 
 	r = !DIRECT_READ(reg, mask);     // if the bus is low now, it is a presence pulse from one or more slaves
 	interrupts();
 	delayMicroseconds(410);          // give slaves plenty of time to complete their presence pulse
-	
+
 	if (!DIRECT_READ(reg, mask)) {	 // Check to see if the bus has failed to return to high
-	
-	
-		busFailFlag = 1 ;			 // Remember that bus did not return to high. Used to support busTest() 
-		
+
+		busFailFlag = 1 ;			 // Remember that bus did not return to high. Used to support busTest()
+
 		return(0);					 // If the bus is still low, then there might be a short to ground,
 									 // so we should not continue because actively driving high might
-									 // fry stuff. Could also be that the pull-up is not strong enough 
+									 // fry stuff. Could also be that the pull-up is not strong enough
 									 // for connected network, in which reading will not work anyway
-									 
+
 									 // It would be nice to break this out to help people debug bus problems,
-									 // but returning an extra value could break existing code. 
-	}									 	
-	
-	busFailFlag = 0 ;			 // Remember that bus did return to high. Used to support busTest() 
-	
+									 // but returning an extra value could break existing code.
+	}
+
+	busFailFlag = 0 ;			 // Remember that bus did return to high. Used to support busTest()
+
 	return r;				     // return 0 if we saw a presence pulse or 1 if the bus stayed high after reset
-	
+
 	// Leave the pin in pull-up mode after reset
-	
 }
 
-// Only valid after a call to reset() that returned 0. 
+// Only valid after a call to reset() that returned 0.
 // Returns 1 if the bus did not float to
-// high after reset. Could indicate a short from bus to 
+// high after reset. Could indicate a short from bus to
 // ground, or pull-up resistor too small for attached network
 
-// Would have been cleaner to fold this into a reset() return value, but that could have 
-// broken existing code that explicitly checks for reset() to have value of 1 to detect failure. 
+// Would have been cleaner to fold this into a reset() return value, but that could have
+// broken existing code that explicitly checks for reset() to have value of 1 to detect failure.
 
 uint8_t OneWire::busFail() {
 	return busFailFlag;
@@ -226,23 +224,23 @@ void OneWire::write_bit(uint8_t v)
 		delayMicroseconds(10);
 		DIRECT_WRITE_HIGH(reg, mask);	// drive output high
 		interrupts();
-		delayMicroseconds(55);			// Make sure output is high when slave samples 15us-60us after initial low 
+		delayMicroseconds(55);			// Make sure output is high when slave samples 15us-60us after initial low
 	} else {
 		noInterrupts();
 		DIRECT_WRITE_LOW(reg, mask);
 		DIRECT_MODE_OUTPUT(reg, mask);	// drive output low
 		delayMicroseconds(65);			// Make sure output is low when salve samples 15us-60us after initial low
-		DIRECT_WRITE_HIGH(reg, mask);	// drive high 
+		DIRECT_WRITE_HIGH(reg, mask);	// drive high
 		interrupts();
 		delayMicroseconds(5);			// continue driving high for at least 1us recovery (Trec)
-	}	
+	}
 }
 
 //
 // Read a bit. Port and bit is used to cut lookup time and provide
 // more certain timing.
 //
-// Leaves bus with internal pull-up enabled 
+// Leaves bus with internal pull-up enabled
 
 uint8_t OneWire::read_bit(void)
 {
@@ -251,19 +249,19 @@ uint8_t OneWire::read_bit(void)
 	uint8_t r;
 
 	noInterrupts();
-	DIRECT_WRITE_LOW(reg, mask);	
+	DIRECT_WRITE_LOW(reg, mask);
 	DIRECT_MODE_OUTPUT(reg, mask);
-	delayMicroseconds(3);			// Initiate read slot (Tint) 
-			
+	delayMicroseconds(3);			// Initiate read slot (Tint)
+
 	DIRECT_MODE_INPUT(reg, mask);	// let pin float, pull up will raise
 	DIRECT_WRITE_HIGH( reg, mask);	// Enable pull-up
-	delayMicroseconds(10);			// Allow time for signal to rise (Trc) 
+	delayMicroseconds(10);			// Allow time for signal to rise (Trc)
 	r = DIRECT_READ(reg, mask);		// Sample before the 15us deadline when the slave will stop pulling low (in the case of a 0 bit)
-									// (We allow 1us slop time buffer) 
+									// (We allow 1us slop time buffer)
 	interrupts();
-	delayMicroseconds(53);		
-									// Minimum slot time is 60us	
-									// We have already used 14us 
+	delayMicroseconds(53);
+									// Minimum slot time is 60us
+									// We have already used 14us
 									// Add an Extra 1us for recovery time
 									// Plus 5us of extra slop time to be safe in case of timing mismatches
 	return r;
@@ -273,7 +271,7 @@ uint8_t OneWire::read_bit(void)
 // Write a byte. The writing code uses the active drivers to raise the
 // pin high, if you need power after the write (e.g. DS18S20 in
 // parasite power mode) then set 'power' to 1, otherwise the pin will
-// be left with pull-up enabled 
+// be left with pull-up enabled
 
 void OneWire::write(uint8_t v, uint8_t power /* = 0 */) {
     uint8_t bitMask;
@@ -281,12 +279,12 @@ void OneWire::write(uint8_t v, uint8_t power /* = 0 */) {
     for (bitMask = 0x01; bitMask; bitMask <<= 1) {
 		OneWire::write_bit( (bitMask & v)?1:0);
     }
-	
+
 	// write_bit always returns with bus actively driven high,
-	// so if caller requests power then we don't need to do anything. 
-	
+	// so if caller requests power then we don't need to do anything.
+
     if ( !power) {
-		noInterrupts();	
+		noInterrupts();
 		DIRECT_MODE_INPUT(baseReg, bitmask);	// if power not requested, then enable pull-up
 		interrupts();
     }
@@ -561,7 +559,7 @@ uint8_t OneWire::crc8(const uint8_t *addr, uint8_t len)
 uint8_t OneWire::crc8(const uint8_t *addr, uint8_t len)
 {
 	uint8_t crc = 0;
-	
+
 	while (len--) {
 		uint8_t inbyte = *addr++;
 		for (uint8_t i = 8; i; i--) {
