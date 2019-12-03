@@ -5,11 +5,10 @@
 #include <LowPower.h>
 
 // Enable debug prints to serial monitor
-#define DEBUG                 1
+#define DEBUG                 0
 #define TX_PIN                6
 #define ONE_WIRE_BUS          3
-#define LED                   13
-#define VREF                  1.099
+#define VREF                  1.1
 
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
@@ -81,7 +80,7 @@ void setup() {
 
 
 unsigned int getBatteryCapacity() {
-  //  float voltage = (1023 * VREF) / analogReadReference();
+  //float voltage = (1023 * VREF) / analogReadReference();
   analogReference(INTERNAL);
   analogRead(0);
   delay(1);
@@ -91,22 +90,25 @@ unsigned int getBatteryCapacity() {
     Serial.println(adc);
   }
 
-  float voltage = adc * VREF / 1023 / 0.248;
+  //float voltage = adc * VREF / 1023 / 0.248;
+  float voltage = adc * VREF / 1023 / 0.204;
   if (DEBUG) {
     Serial.print("VCC: ");
     Serial.println(voltage, 3);
   }
   for (int i = 0 ; i < ncell ; i++){
-    if (DEBUG) {
-      Serial.print(i);
-      Serial.print(" : ");
-      Serial.print(remainingCapacity[i].voltage);
-      Serial.print(" | ");
-      Serial.println(remainingCapacity[i].capacity);
-    }
     if (voltage > remainingCapacity[i].voltage) {
+      if (DEBUG) {
+        Serial.print(i);
+        Serial.print(" : ");
+        Serial.print(remainingCapacity[i].voltage);
+        Serial.print(" | ");
+        Serial.println(remainingCapacity[i].capacity);
+      }
       return remainingCapacity[i].capacity;
     }
+
+
   }
   return 0;
 }
@@ -190,12 +192,12 @@ void loop()
     return;
   }
 
-  //ThermometerData dataToSend;
-  //dataToSend.batt = batteryLevel;
-  //dataToSend.temp = temperature;
+  ThermometerData dataToSend;
+  dataToSend.batt = batteryLevel;
+  dataToSend.temp = temperature;
 
-  //vw_send((byte*) &dataToSend, sizeof(dataToSend)); // On envoie le message
-  //vw_wait_tx(); // On attend la fin de l'envoi
+  vw_send((byte*) &dataToSend, sizeof(dataToSend)); // On envoie le message
+  vw_wait_tx(); // On attend la fin de l'envoi
   if (DEBUG) {
     Serial.print("transmitted battery level OK: ");
     Serial.print(batteryLevel);
@@ -203,7 +205,8 @@ void loop()
     Serial.print("transmitted temperature OK: ");
     Serial.print(temperature);
     Serial.println("°C");
+    delay(100);
   }
-  delay(1000);
-  //lowPowerSleep(15);
+
+  lowPowerSleep(1);
 }
