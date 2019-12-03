@@ -5,7 +5,7 @@
 #include <LowPower.h>
 
 // Enable debug prints to serial monitor
-#define DEBUG 1
+#define DEBUG                 1
 #define TX_PIN                6
 #define ONE_WIRE_BUS          3
 #define LED                   13
@@ -68,7 +68,7 @@ const int ncell = sizeof(remainingCapacity) / sizeof(struct batteryCapacity);
 //SETUP****************************************************
 // cppcheck-suppress unusedFunction
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   if (DEBUG) {
     Serial.print("Setup");
   }
@@ -190,20 +190,20 @@ void loop()
     return;
   }
 
-  ThermometerData dataToSend;
-  dataToSend.batt = batteryLevel;
-  dataToSend.temp = temperature;
+  //ThermometerData dataToSend;
+  //dataToSend.batt = batteryLevel;
+  //dataToSend.temp = temperature;
 
-  vw_send((byte*) &dataToSend, sizeof(dataToSend)); // On envoie le message
-  vw_wait_tx(); // On attend la fin de l'envoi
+  //vw_send((byte*) &dataToSend, sizeof(dataToSend)); // On envoie le message
+  //vw_wait_tx(); // On attend la fin de l'envoi
   if (DEBUG) {
     Serial.print("transmitted battery level OK: ");
     Serial.print(batteryLevel);
     Serial.println("%");
     Serial.print("transmitted temperature OK: ");
     Serial.print(temperature);
-    Serial.println("Â°C");
+    Serial.println("°C");
   }
-
-  lowPowerSleep(15);
+  delay(1000);
+  //lowPowerSleep(15);
 }
