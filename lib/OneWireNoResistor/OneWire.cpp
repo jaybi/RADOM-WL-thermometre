@@ -175,7 +175,6 @@ uint8_t OneWire::reset(void)
 	delayMicroseconds(410);          // give slaves plenty of time to complete their presence pulse
 
 	if (!DIRECT_READ(reg, mask)) {	 // Check to see if the bus has failed to return to high
-
 		busFailFlag = 1 ;			 // Remember that bus did not return to high. Used to support busTest()
 
 		return(0);					 // If the bus is still low, then there might be a short to ground,

@@ -107,8 +107,6 @@ unsigned int getBatteryCapacity() {
       }
       return remainingCapacity[i].capacity;
     }
-
-
   }
   return 0;
 }
