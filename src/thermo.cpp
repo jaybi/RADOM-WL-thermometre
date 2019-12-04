@@ -5,7 +5,7 @@
 #include <LowPower.h>
 
 // Enable debug prints to serial monitor
-#define DEBUG                 0
+#define DEBUG                 1
 #define TX_PIN                6
 #define ONE_WIRE_BUS          3
 #define VREF                  1.1
@@ -107,7 +107,7 @@ unsigned int getBatteryCapacity() {
       }
       return remainingCapacity[i].capacity;
     }
-  }
+  }  
   return 0;
 }
 
@@ -203,7 +203,7 @@ void loop()
     Serial.print("transmitted temperature OK: ");
     Serial.print(temperature);
     Serial.println("°C");
-    delay(100);
+    delay(1000);
   }
 
   lowPowerSleep(1);
