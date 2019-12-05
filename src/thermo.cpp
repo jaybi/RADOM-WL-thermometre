@@ -5,10 +5,11 @@
 #include <LowPower.h>
 
 // Enable debug prints to serial monitor
-#define DEBUG                 1
+#define DEBUG                 0
 #define TX_PIN                6
 #define ONE_WIRE_BUS          3
 #define VREF                  1.1
+#define LED                   13
 
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
@@ -67,6 +68,14 @@ const int ncell = sizeof(remainingCapacity) / sizeof(struct batteryCapacity);
 //SETUP****************************************************
 // cppcheck-suppress unusedFunction
 void setup() {
+  if (DEBUG)
+  {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  
+  
+
   Serial.begin(9600);
   if (DEBUG) {
     Serial.print("Setup");
@@ -206,5 +215,9 @@ void loop()
     delay(1000);
   }
 
-  lowPowerSleep(1);
+  if (DEBUG) {
+    delay(1000);
+  } else {
+    lowPowerSleep(15);
+  }
 }
