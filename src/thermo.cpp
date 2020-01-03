@@ -5,9 +5,9 @@
 #include <LowPower.h>
 
 // Enable debug prints to serial monitor
-#define DEBUG                 0
+#define DEBUG                 1
 #define TX_PIN                6
-#define ONE_WIRE_BUS          3
+#define ONE_WIRE_BUS          3  
 #define VREF                  1.1
 
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
@@ -203,7 +203,7 @@ void loop()
     Serial.print("transmitted temperature OK: ");
     Serial.print(temperature);
     Serial.println("°C");
-    delay(100);
+    delay(1000);
   }
 
   lowPowerSleep(1);
