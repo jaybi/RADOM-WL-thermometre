@@ -10,6 +10,7 @@
 #define ONE_WIRE_BUS          3
 #define VREF                  1.1
 #define LED                   13
+#define TEMP_OFFSET           - 1.55
 
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
@@ -68,14 +69,12 @@ const int ncell = sizeof(remainingCapacity) / sizeof(struct batteryCapacity);
 //SETUP****************************************************
 // cppcheck-suppress unusedFunction
 void setup() {
-  if (DEBUG)
-  {
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, HIGH);
-  }
+  // if (DEBUG)
+  // {
+  //   pinMode(LED_BUILTIN, OUTPUT);
+  //   digitalWrite(LED_BUILTIN, HIGH);
+  // }
   
-  
-
   Serial.begin(9600);
   if (DEBUG) {
     Serial.print("Setup");
@@ -85,22 +84,38 @@ void setup() {
   if (DEBUG) {
     Serial.println(" OK");
   }
+
+
 }
 
+long readVcc() {
+  long result;
+  // Read 1.1V reference against AVcc
+  ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  delay(2); // Wait for Vref to settle
+  ADCSRA |= _BV(ADSC); // Convert
+  while (bit_is_set(ADCSRA,ADSC));
+  result = ADCL;
+  result |= ADCH<<8;
+  result = 1125300L / result; // Back-calculate AVcc in mV
+  return result;
+}
 
 unsigned int getBatteryCapacity() {
   //float voltage = (1023 * VREF) / analogReadReference();
   analogReference(INTERNAL);
-  analogRead(0);
-  delay(1);
   unsigned int adc = analogRead(0);
+  delay(1);
+  adc = analogRead(0);
   if (DEBUG) {
     Serial.print("ADC: ");
     Serial.println(adc);
   }
 
   //float voltage = adc * VREF / 1023 / 0.248;
-  float voltage = adc * VREF / 1023 / 0.204;
+  float voltage = adc * VREF / 1023 / 0.1825;
+  
+
   if (DEBUG) {
     Serial.print("VCC: ");
     Serial.println(voltage, 3);
@@ -170,7 +185,7 @@ byte getTemperature(float *temperature, byte reset_search) {
   }
 
   /* Calcul de la température en degré Celsius */
-  *temperature = (int16_t) ((data[1] << 8) | data[0]) * 0.0625;
+  *temperature = (int16_t) ((data[1] << 8) | data[0]) * 0.0625 + TEMP_OFFSET;
 
   // Pas d'erreur
   return READ_OK;
@@ -184,6 +199,8 @@ void lowPowerSleep(int minutes)
     LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
   }
 }
+
+
 
 //LOOP****************************************************
 // cppcheck-suppress unusedFunction
@@ -220,4 +237,7 @@ void loop()
   } else {
     lowPowerSleep(15);
   }
+
+
 }
+
