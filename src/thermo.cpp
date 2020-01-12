@@ -10,7 +10,7 @@
 #define ONE_WIRE_BUS 3
 #define VREF 1.1
 #define LED 13
-#define TEMP_OFFSET -1.55
+#define TEMP_OFFSET -0.25
 
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
