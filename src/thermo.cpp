@@ -5,7 +5,7 @@
 #include <LowPower.h>
 
 // Enable debug prints to serial monitor
-#define DEBUG 1
+#define DEBUG 0
 #define TX_PIN 6
 #define ONE_WIRE_BUS 3
 #define VREF 1.1
