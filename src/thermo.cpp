@@ -279,6 +279,8 @@ void lowPowerSleep(int minutes)
 // cppcheck-suppress unusedFunction
 void loop()
 {
+  digitalWrite(LED, HIGH); // La led s'allume au début de la loop()
+
   int batteryLevel = getBatteryCapacity();
   float temperature;
 
@@ -307,6 +309,8 @@ void loop()
     Serial.println("°C");
     delay(1000);
   }
+
+  digitalWrite(LED, LOW); // La LED s'éteint à la fin de la loop()
 
   if (DEBUG)
   {
