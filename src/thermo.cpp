@@ -10,7 +10,7 @@
 #define ONE_WIRE_BUS 3
 #define VREF 1.1
 #define LED 13
-#define TEMP_OFFSET -0.25
+#define TEMP_OFFSET -0.25 // TODO:Attention à annuler l'offset dans le projet WL-recepteur
 
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
@@ -36,60 +36,33 @@ struct ThermometerData
 };
 
 const batteryCapacity remainingCapacity[] = {
-    4.20,
-    100,
-    4.10,
-    96,
-    4.00,
-    92,
-    3.96,
-    89,
-    3.92,
-    85,
-    3.89,
-    81,
-    3.86,
-    77,
-    3.83,
-    73,
-    3.80,
-    69,
-    3.77,
-    65,
-    3.75,
-    62,
-    3.72,
-    58,
-    3.70,
-    55,
-    3.66,
-    51,
-    3.62,
-    47,
-    3.58,
-    43,
-    3.55,
-    40,
-    3.51,
-    35,
-    3.48,
-    32,
-    3.44,
-    26,
-    3.40,
-    24,
-    3.37,
-    20,
-    3.35,
-    17,
-    3.27,
-    13,
-    3.20,
-    9,
-    3.1,
-    6,
-    3.00,
-    3,
+    {4.20, 100},
+    {4.10, 96},
+    {4.00, 92},
+    {3.96, 89},
+    {3.92, 85},
+    {3.89, 81},
+    {3.86, 77},
+    {3.83, 73},
+    {3.80, 69},
+    {3.77, 65},
+    {3.75, 62},
+    {3.72, 58},
+    {3.70, 55},
+    {3.66, 51},
+    {3.62, 47},
+    {3.58, 43},
+    {3.55, 40},
+    {3.51, 35},
+    {3.48, 32},
+    {3.44, 26},
+    {3.40, 24},
+    {3.37, 20},
+    {3.35, 17},
+    {3.27, 13},
+    {3.20, 9},
+    {3.1, 6},
+    {3.00, 3},
 };
 
 const int ncell = sizeof(remainingCapacity) / sizeof(struct batteryCapacity);
@@ -98,12 +71,6 @@ const int ncell = sizeof(remainingCapacity) / sizeof(struct batteryCapacity);
 // cppcheck-suppress unusedFunction
 void setup()
 {
-  // if (DEBUG)
-  // {
-  //   pinMode(LED_BUILTIN, OUTPUT);
-  //   digitalWrite(LED_BUILTIN, HIGH);
-  // }
-
   Serial.begin(9600);
   if (DEBUG)
   {
@@ -280,6 +247,6 @@ void loop()
   }
   else
   {
-    lowPowerSleep(15);
+    lowPowerSleep(5);
   }
 }
