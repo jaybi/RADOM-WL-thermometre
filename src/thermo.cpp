@@ -112,7 +112,9 @@ unsigned int getBatteryCapacity()
     Serial.println(adc);
   }
 
-  float voltage = adc * VREF / 1023 / 0.242;
+  float voltage = adc * VREF / 1023 / 0.242; // Avec des résistances de R1 = 15k et R2 = 47k,
+                                             // on a Vs = Ve * (R1/(R1+R2))
+                                             // Vs = Ve * 0.242
 
   if (DEBUG)
   {
