@@ -72,9 +72,9 @@ const int ncell = sizeof(remainingCapacity) / sizeof(struct batteryCapacity);
 // cppcheck-suppress unusedFunction
 void setup()
 {
-  Serial.begin(9600);
   if (DEBUG)
   {
+    Serial.begin(9600);
     Serial.print("Setup");
   }
   vw_set_tx_pin(TX_PIN);
