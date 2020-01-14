@@ -11,6 +11,7 @@
 #define VREF 1.1
 #define LED 13
 #define TEMP_OFFSET -0.25 // TODO:Attention à annuler l'offset dans le projet WL-recepteur
+#define SLEEPING_TIME 5   // Temps d'attente entre deux émissions de valeurs.
 
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
@@ -243,10 +244,10 @@ void loop()
 
   if (DEBUG)
   {
-    delay(1000);
+    delay(1000); // En DEBUG, les valeurs sont transmises toutes les secondes.
   }
   else
   {
-    lowPowerSleep(5);
+    lowPowerSleep(SLEEPING_TIME);
   }
 }
