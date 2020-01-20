@@ -19,7 +19,11 @@ jobs:
     docker:
       - image: suculent/platformio-docker-build
     steps:
+      get lib:
+        - wget https://github.com/bigjosh/OneWireNoResistor/archive/master.zip -O /tmp/OneWireNoResistor.zip
+        - unzip /tmp/onewire_source.zip -d $PWD/lib/
       - checkout
       - run: platformio lib -g install 251 # VirtualWire
       - run: platformio lib -g install 38 # LowPower
       - run: platformio ci src/thermo.cpp --board=pro8MHzatmega328
+      
