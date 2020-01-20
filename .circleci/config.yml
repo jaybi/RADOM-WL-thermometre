@@ -2,24 +2,23 @@
 version: 2.1
 
 # Orchestrate or schedule a set of jobs
+jobs:
+  build-arduino-default:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: Make scripts executable 
+          command: sudo chmod -R +x ./.circleci/*.sh
+      - run:
+          name: Install
+          command: ./.circleci/install_arduino.sh
+      - run:
+          name: Build
+          command: ./.circleci/script_arduino.sh
+
 workflows:
-
-  jobs:
-    build-arduino-default:
-      machine: true
-      steps:
-        - checkout
-        - run:
-            name: Make scripts executable 
-            command: sudo chmod -R +x ./.circleci/*.sh
-        - run:
-            name: Install
-            command: ./.circleci/install_arduino.sh
-        - run:
-            name: Build
-            command: ./.circleci/script_arduino.sh
-
-  workflows:
+  version: 2.1
     build:
       jobs:
         - build-arduino-default
