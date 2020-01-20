@@ -22,4 +22,4 @@ jobs:
       - checkout
       - run: platformio lib -g install 251 # VirtualWire
       - run: platformio lib -g install 38 # LowPower
-      - run: platformio ci src/thermo.cpp --board=esp32doit-devkit-v1 --verbose
+      - run: platformio ci src/thermo.cpp --board=pro8MHzatmega328
