@@ -17,7 +17,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: sglahn/platformio-core
+      - image: petewall/platformio
     steps:
       - checkout
       - run: platformio lib -g install 251 # VirtualWire
