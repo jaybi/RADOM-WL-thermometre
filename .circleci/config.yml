@@ -22,4 +22,5 @@ jobs:
       - checkout
       - run: platformio lib -g install 251 # VirtualWire
       - run: platformio lib -g install 38 # LowPower
-      - run: platformio ci src/thermo.cpp --board=pro8MHzatmega328 --lib=lib/OneWire
+      - run: platformio ci src/thermo.cpp --board=pro8MHzatmega328 --lib=lib/OneWireNoResistor
+      
