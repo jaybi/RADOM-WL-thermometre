@@ -1,24 +1,13 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine. See: https://circleci.com/docs/2.0/configuration-reference
-version: 2.1
+dependencies:
+  pre:
+    # Install the latest stable PlatformIO
+    - sudo pip install -U platformio
 
-# Orchestrate or schedule a set of jobs
-jobs:
-  build-arduino-default:
-    machine: true
-    steps:
-      - checkout
-      - run:
-          name: Make scripts executable 
-          command: sudo chmod -R +x ./.circleci/*.sh
-      - run:
-          name: Install
-          command: ./.circleci/install_arduino.sh
-      - run:
-          name: Build
-          command: ./.circleci/script_arduino.sh
+    # download dependent libraries
+    - platformio lib -g install 1 # OneWire
+    - platformio lib -g install 251 # VirtualWire
+    - platformio lib -g install 38 # LowPower
 
-workflows:
-  version: 2
-  build:
-    jobs:
-      - build-arduino-default
+test:
+  override:
+      - platformio ci src/thermo.cpp --board=pro8MHzatmega328
