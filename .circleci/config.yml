@@ -19,11 +19,10 @@ jobs:
           name: Check defects >= medium
       - run:
           command: platformio run --environment=DEBUG
-          name: Build 
-      # - run:
-      #     command: platformio ci src/thermo.cpp include/struct.h include/const.h --board=pro8MHzatmega328 --lib=lib/OneWireNoResistor --project-conf=platformio.ini
-      #     name: Build
-
+          name: Build-DEBUG 
+      - run:
+          command: platformio run --environment=RELEASE
+          name: Build-RELEASE
 workflows:
   build:
     jobs:
