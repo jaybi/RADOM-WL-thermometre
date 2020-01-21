@@ -17,7 +17,7 @@ jobs:
       - run: 
           command: check --project-conf=platformio.ini --fail-on-defect=medium --fail-on-defect=high
           name: Check defects >= medium
-      run:
+      - run:
           command: platformio run --environment=DEBUG
           name: Build 
       # - run:
