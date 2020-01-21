@@ -15,6 +15,7 @@
 #define LED 13
 #define TEMP_OFFSET -0.25 // TODO:Attention à annuler l'offset dans le projet WL-recepteur
 #define SLEEPING_TIME 5   // Temps d'attente entre deux émissions de valeurs.
+#define THERMO_PIN 0      // Broche du thermometre
 
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
@@ -46,9 +47,12 @@ void setup()
 unsigned int getBatteryCapacity()
 {
   analogReference(INTERNAL);
-  unsigned int adc = analogRead(0);
-  delay(1);
-  adc = analogRead(0);
+  for (int i = 0; i < 5; i++)
+  {
+    analogRead(THERMO_PIN); // Boucle de rejet des 5 premières valeurs
+    delay(1);
+  }
+  unsigned int adc = analogRead(THERMO_PIN);
   if (DEBUG)
   {
     Serial.print("ADC: ");
