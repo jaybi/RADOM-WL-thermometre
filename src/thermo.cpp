@@ -8,7 +8,7 @@
 #include "const.h"
 
 // Enable debug prints to serial monitor
-#define DEBUG 0 // Permet des sorties sur le Serial si TRUE
+//#define DEBUG 0 // Permet des sorties sur le Serial si TRUE
 #define TX_PIN 6
 #define ONE_WIRE_BUS 3
 #define VREF 1.1
