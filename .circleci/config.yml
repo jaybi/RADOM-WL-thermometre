@@ -4,16 +4,25 @@ jobs:
     docker:
       - image: petewall/platformio
     steps:
+      - run:
+          command: platformio update
+          name: Updating platformio
       - checkout
+      # - run: 
+      #     command: platformio lib -g install 251 # VirtualWire
+      #     name: Lib VirtualWire installing
+      # - run: 
+      #     command: platformio lib -g install 38 # LowPower
+      #     name: Lib LowPower installing
       - run: 
-          command: platformio lib -g install 251 # VirtualWire
-          name: Lib VirtualWire installing
-      - run: 
-          command: platformio lib -g install 38 # LowPower
-          name: Lib LowPower installing
-      - run: 
-          command: platformio ci src/thermo.cpp --board=pro8MHzatmega328 --lib=lib/OneWireNoResistor --lib=include/ --project-conf=platformio.ini
-          name: Build
+          command: check --project-conf=platformio.ini --fail-on-defect=medium --fail-on-defect=high
+          name: Check defects >= medium
+      run:
+          command: platformio run --environment=DEBUG
+          name: Build 
+      # - run:
+      #     command: platformio ci src/thermo.cpp include/struct.h include/const.h --board=pro8MHzatmega328 --lib=lib/OneWireNoResistor --project-conf=platformio.ini
+      #     name: Build
 
 workflows:
   build:
