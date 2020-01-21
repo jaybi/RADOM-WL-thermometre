@@ -12,7 +12,7 @@ jobs:
           command: platformio lib -g install 38 # LowPower
           name: Lib LowPower installing
       - run: 
-          command: platformio ci src/thermo.cpp --board=pro8MHzatmega328 --lib=lib/OneWireNoResistor
+          command: platformio ci src/thermo.cpp --board=pro8MHzatmega328 --lib=lib/OneWireNoResistor --lib=include
           name: Build
 
 workflows:
