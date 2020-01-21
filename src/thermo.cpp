@@ -6,6 +6,7 @@
 // Inclusion des headers
 #include "struct.h"
 #include "const.h"
+#include "functions.h"
 
 // Enable debug prints to serial monitor
 //#define DEBUG 0 // Permet des sorties sur le Serial si TRUE
@@ -31,17 +32,12 @@ enum DS18B20_RCODES
 //SETUP****************************************************
 void setup()
 {
-  if (DEBUG)
-  {
-    Serial.begin(9600);
-    Serial.print("Setup");
-  }
+  initSerial(9600);
+
   vw_set_tx_pin(TX_PIN);
   vw_setup(2000);
-  if (DEBUG)
-  {
-    Serial.println(" OK");
-  }
+
+  serialDebug("", "Done.");
 }
 
 unsigned int getBatteryCapacity()
@@ -53,33 +49,21 @@ unsigned int getBatteryCapacity()
     delay(1);
   }
   unsigned int adc = analogRead(THERMO_PIN);
-  if (DEBUG)
-  {
-    Serial.print("ADC: ");
-    Serial.println(adc);
-  }
+
+  serialDebug("ADC", adc);
 
   float voltage = adc * VREF / 1023 / 0.242; // Avec des résistances de R1 = 15k et R2 = 47k,
                                              // on a Vs = Ve * (R1/(R1+R2))
                                              // Vs = Ve * 0.242
 
-  if (DEBUG)
-  {
-    Serial.print("VCC: ");
-    Serial.println(voltage, 3);
-  }
+  serialDebug("VCC", voltage, 3);
+
   for (int i = 0; i < ncell; i++)
   {
     if (voltage > remainingCapacity[i].voltage)
     {
-      if (DEBUG)
-      {
-        Serial.print(i);
-        Serial.print(" : ");
-        Serial.print(remainingCapacity[i].voltage);
-        Serial.print(" | ");
-        Serial.println(remainingCapacity[i].capacity);
-      }
+      serialDebug("Tension", remainingCapacity[i].voltage);
+      serialDebug("Capacité", remainingCapacity[i].capacity);
       return remainingCapacity[i].capacity;
     }
   }
@@ -168,10 +152,8 @@ void loop()
 
   if (getTemperature(&temperature, true) != READ_OK)
   {
-    if (DEBUG)
-    {
-      Serial.println(F("Erreur de lecture du capteur"));
-    }
+    serialDebug("Erreur de lecture du capteur.");
+    delay(1000); //Temporise le temps de capter la données
     return;
   }
 
@@ -181,16 +163,9 @@ void loop()
 
   vw_send((byte *)&dataToSend, sizeof(dataToSend)); // On envoie le message
   vw_wait_tx();                                     // On attend la fin de l'envoi
-  if (DEBUG)
-  {
-    Serial.print("transmitted battery level OK: ");
-    Serial.print(batteryLevel);
-    Serial.println("%");
-    Serial.print("transmitted temperature OK: ");
-    Serial.print(temperature);
-    Serial.println("°C");
-    delay(1000);
-  }
+
+  serialDebug("transmitted battery level OK", batteryLevel);
+  serialDebug("transmitted temp OK", temperature);
 
   digitalWrite(LED, LOW); // La LED s'éteint à la fin de la loop()
 
