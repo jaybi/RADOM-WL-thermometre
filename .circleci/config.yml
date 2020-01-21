@@ -1,10 +1,23 @@
 version: 2
 jobs:
-  build:
+  build-code:
     docker:
-      - image: suculent/platformio-docker-build
+      - image: petewall/platformio
     steps:
       - checkout
-      - run: platformio lib -g install 251 # VirtualWire
-      - run: platformio lib -g install 38 # LowPower
-      - run: platformio ci src/thermo.cpp --board=pro8MHzatmega328
+      - run: 
+          command: platformio lib -g install 251 # VirtualWire
+          name: Lib VirtualWire installing
+      - run: 
+          command: platformio lib -g install 38 # LowPower
+          name: Lib LowPower installing
+      - run: 
+          command: platformio ci src/thermo.cpp --board=pro8MHzatmega328 --lib=lib/OneWireNoResistor
+          name: Build
+
+workflows:
+  build:
+    jobs:
+    - build-code
+  version: 2
+      
