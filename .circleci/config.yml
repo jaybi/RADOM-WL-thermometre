@@ -3,12 +3,11 @@ jobs:
   build-code:
     docker:
       - image: petewall/platformio
-    working_directory: ~/
     steps:
+      - checkout
       - run:
           command: pio pkg update
           name: Updating platformio
-      - checkout
       # - run: 
       #     command: platformio lib -g install 251 # VirtualWire
       #     name: Lib VirtualWire installing
