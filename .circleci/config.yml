@@ -15,7 +15,7 @@ jobs:
       #     command: platformio lib -g install 38 # LowPower
       #     name: Lib LowPower installing
       - run: 
-          command: pio check -v --src-filters="+</src>" --project-conf=platformio.ini --fail-on-defect=medium --fail-on-defect=high
+          command: pio check -v --project-conf=platformio.ini --fail-on-defect=medium --fail-on-defect=high
           name: Check defects >= medium
       - run:
           command: pio run --environment=DEBUG
