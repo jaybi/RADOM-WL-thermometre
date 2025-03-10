@@ -1,30 +1,7 @@
 version: 2
 jobs:
-  build-code:
-    docker:
-      - image: petewall/platformio
+  runner-test:
+    machine: true
+    resource_class: jaybi/pool
     steps:
-      - checkout
-      - run:
-          command: pio pkg update
-          name: Updating platformio
-      # - run: 
-      #     command: platformio lib -g install 251 # VirtualWire
-      #     name: Lib VirtualWire installing
-      # - run: 
-      #     command: platformio lib -g install 38 # LowPower
-      #     name: Lib LowPower installing
-      - run: 
-          command: pio check --skip-packages -v --project-conf=platformio.ini --fail-on-defect=medium --fail-on-defect=high
-          name: Check defects >= medium
-      - run:
-          command: pio run --environment=DEBUG
-          name: Build-DEBUG 
-      - run:
-          command: pio run --environment=RELEASE
-          name: Build-RELEASE
-workflows:
-  build:
-    jobs:
-    - build-code
-  version: 2
+      - run: echo "Hi I'm on Runners!"
