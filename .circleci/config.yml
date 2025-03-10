@@ -3,6 +3,7 @@ jobs:
   build-code:
     docker:
       - image: petewall/platformio
+    working_directory: ~/
     steps:
       - run:
           command: pio pkg update
