@@ -2,7 +2,7 @@ version: 2
 jobs:
   build-code:
     docker:
-      - image: petewall/platformio
+      - image: cimg/base:2024.12
     steps:
       - checkout
       - run:
