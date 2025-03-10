@@ -5,7 +5,7 @@ jobs:
       - image: petewall/platformio
     steps:
       - run:
-          command: platformio update
+          command: pio pkg update
           name: Updating platformio
       - checkout
       # - run: 
