@@ -1,7 +1,12 @@
-version: 2
+version: 2.1
 jobs:
-  runner-test:
-    machine: true
-    resource_class: jaybi/pool
+  build:
+    docker:
+      - image: cimg/base:current
+    resource_class: jaybi/pool2
     steps:
-      - run: echo "Hi I'm on Runners!"
+      - run: echo "Hi I'm on a Container Runner!"
+workflows:
+  build-workflow:
+    jobs:
+      - build
