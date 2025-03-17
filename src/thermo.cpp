@@ -1,23 +1,30 @@
 // Inclusion des bibliothèques
 #include <OneWire.h>
-#include <VirtualWire.h>
 #include <Arduino.h>
 #include <LowPower.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 // Inclusion des headers
 #include "struct.h"
 #include "const.h"
 #include "functions.h"
 
 // Enable debug prints to serial monitor
-//#define DEBUG 0 // Permet des sorties sur le Serial si TRUE
+//#define DEBUG 0 // Permet des sorties sur le Serial si TRUE // Le mode DEBUG est override par l'env PIO, voir platformio.ini
 #define TX_PIN 6
 #define ONE_WIRE_BUS 3
 #define VREF 1.1
 #define LED 13
 #define TEMP_OFFSET -0.25 // TODO:Attention à annuler l'offset dans le projet WL-recepteur
 #define SLEEPING_TIME 5   // Temps d'attente entre deux émissions de valeurs.
-#define THERMO_PIN 0      // Broche du thermometre
+#define BATTERY_PIN 0      // Pin de la batterie à mesurer
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET    -1
+#define SCREEN_ADDRESS 0x3C
 
+//Instanciation des objets
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
 /* Code de retour de la fonction getTemperature() */
@@ -34,8 +41,18 @@ void setup()
 {
   initSerial(9600);
 
-  vw_set_tx_pin(TX_PIN);
-  vw_setup(2000);
+  // Initialiser la communication I2C
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+  
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.println("Test OLED");
+  display.display();
 
   serialDebug("", "Done.");
 }
@@ -45,18 +62,18 @@ unsigned int getBatteryCapacity()
   analogReference(INTERNAL);
   for (int i = 0; i < 5; i++)
   {
-    analogRead(THERMO_PIN); // Boucle de rejet des 5 premières valeurs
+    analogRead(BATTERY_PIN); // Boucle de rejet des 5 premières valeurs
     delay(1);
   }
-  unsigned int adc = analogRead(THERMO_PIN);
+  unsigned int adc = analogRead(BATTERY_PIN);
 
-  serialDebug("ADC", adc);
+  //serialDebug("ADC", adc);
 
   float voltage = adc * VREF / 1023 / 0.242; // Avec des résistances de R1 = 15k et R2 = 47k,
                                              // on a Vs = Ve * (R1/(R1+R2))
                                              // Vs = Ve * 0.242
 
-  serialDebug("VCC", voltage, 3);
+  //serialDebug("VCC", voltage, 3);
 
   for (int i = 0; i < ncell; i++)
   {
@@ -157,24 +174,28 @@ void loop()
     return;
   }
 
-  ThermometerData dataToSend;
-  dataToSend.batt = batteryLevel;
-  dataToSend.temp = temperature;
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("Temperature: ");
+  display.print(temperature);
+  display.println(" C");
 
-  vw_send((byte *)&dataToSend, sizeof(dataToSend)); // On envoie le message
-  vw_wait_tx();                                     // On attend la fin de l'envoi
+  display.setCursor(0, 20);
+  display.print("Batterie: ");
+  display.print(batteryLevel);
+  display.println("%");
+  display.display();
 
-  serialDebug("transmitted battery level OK", batteryLevel);
-  serialDebug("transmitted temp OK", temperature);
+  delay(2000); // Attendre avant de mettre à jour l'affichage
 
   digitalWrite(LED, LOW); // La LED s'éteint à la fin de la loop()
 
-  if (DEBUG)
-  {
-    delay(1000); // En DEBUG, les valeurs sont transmises toutes les secondes.
-  }
-  else
-  {
-    lowPowerSleep(SLEEPING_TIME);
-  }
+  // if (DEBUG)
+  // {
+  //   delay(1000); // En DEBUG, les valeurs sont transmises toutes les secondes.
+  // }
+  // else
+  // {
+  //   lowPowerSleep(SLEEPING_TIME);
+  // }
 }
