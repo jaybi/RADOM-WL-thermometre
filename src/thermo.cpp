@@ -1,8 +1,6 @@
 // Inclusion des bibliothèques
 #include <OneWire.h>
 #include <Arduino.h>
-#include <LowPower.h>
-#include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 // Inclusion des headers
 #include "struct.h"
@@ -11,19 +9,18 @@
 
 // Enable debug prints to serial monitor
 //#define DEBUG 0 // Permet des sorties sur le Serial si TRUE // Le mode DEBUG est override par l'env PIO, voir platformio.ini
-#define TX_PIN 6
 #define ONE_WIRE_BUS 3
 #define VREF 1.1
 #define LED 13
-#define TEMP_OFFSET -0.25 // TODO:Attention à annuler l'offset dans le projet WL-recepteur
-#define SLEEPING_TIME 5   // Temps d'attente entre deux émissions de valeurs.
+#define TEMP_OFFSET -1.81 // TODO:Attention à annuler l'offset dans le projet WL-recepteur
 #define BATTERY_PIN 0      // Pin de la batterie à mesurer
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET    -1
 #define SCREEN_ADDRESS 0x3C
 
-//Instanciation des objets
+float tension = 0.0; // Tension de la batterie
+
+// Instanciation des objets
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 OneWire ds(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 
@@ -36,51 +33,51 @@ enum DS18B20_RCODES
   INVALID_SENSOR   // Capteur invalide (pas un DS18B20)
 };
 
-//SETUP****************************************************
+
+// SETUP****************************************************
 void setup()
 {
   initSerial(9600);
 
   // Initialiser la communication I2C
-  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
+  Wire.begin();
+  Serial.println(F("I2C initialisé."));
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
+  {
+    serialDebug(F("SSD1306 allocation failed"));
+    while (true); // Boucle infinie pour arrêter le programme
   }
-  
+
+  serialDebug(F("SSD1306 initialisé."));
+
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.println("Test OLED");
+  display.println(F("Bienvenue ! initialisation..."));
   display.display();
 
-  serialDebug("", "Done.");
+  serialDebug(F("Done."));
 }
 
 unsigned int getBatteryCapacity()
 {
   analogReference(INTERNAL);
-  for (int i = 0; i < 5; i++)
+  for (uint8_t i = 0; i < 5; i++)
   {
     analogRead(BATTERY_PIN); // Boucle de rejet des 5 premières valeurs
     delay(1);
   }
   unsigned int adc = analogRead(BATTERY_PIN);
 
-  //serialDebug("ADC", adc);
-
-  float voltage = adc * VREF / 1023 / 0.242; // Avec des résistances de R1 = 15k et R2 = 47k,
+  tension = adc * VREF / 1023 / 0.242; // Avec des résistances de R1 = 15k et R2 = 47k,
                                              // on a Vs = Ve * (R1/(R1+R2))
                                              // Vs = Ve * 0.242
-
-  //serialDebug("VCC", voltage, 3);
-
-  for (int i = 0; i < ncell; i++)
+  for (uint8_t i = 0; i < ncell; i++)
   {
-    if (voltage > remainingCapacity[i].voltage)
+    if (tension > remainingCapacity[i].voltage)
     {
-      serialDebug("Tension", remainingCapacity[i].voltage);
-      serialDebug("Capacité", remainingCapacity[i].capacity);
       return remainingCapacity[i].capacity;
     }
   }
@@ -149,53 +146,40 @@ byte getTemperature(float *temperature, byte reset_search)
   return READ_OK;
 }
 
-void lowPowerSleep(int minutes)
-{
-  int seconds = minutes * 60;
-  int sleeps = seconds / 8;
-  for (int i = 0; i < sleeps; i++)
-  {
-    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-  }
-}
-
 //LOOP****************************************************
 void loop()
 {
-  digitalWrite(LED, HIGH); // La led s'allume au début de la loop()
+  //digitalWrite(LED, HIGH); // La led s'allume au début de la loop()
 
   int batteryLevel = getBatteryCapacity();
-  float temperature;
+  float temperature; // Température en degré Celsius
 
   if (getTemperature(&temperature, true) != READ_OK)
   {
-    serialDebug("Erreur de lecture du capteur.");
-    delay(1000); //Temporise le temps de capter la données
+    serialDebug(F("Erreur de lecture du capteur."));
+    delay(1000); // Temporise le temps de capter la données
     return;
   }
 
   display.clearDisplay();
-  display.setCursor(0, 0);
-  display.print("Temperature: ");
+
+  display.setCursor(0, 0);// Affichage de la température
+  display.print(F("Temperature: "));
   display.print(temperature);
-  display.println(" C");
+  display.println(F(" C"));
 
-  display.setCursor(0, 20);
-  display.print("Batterie: ");
+  display.setCursor(0, 20);// Affichage de la batterie
+  display.print(F("Batterie: "));
   display.print(batteryLevel);
-  display.println("%");
-  display.display();
+  display.println(F(" %"));
 
+  display.setCursor(0, 30);// Affichage de la tension
+  display.print(F("Tension: "));
+  display.print(tension);
+  display.println(F(" V"));
+
+  display.display(); // Affiche les données
+
+  //digitalWrite(LED, LOW); // La LED s'éteint à la fin de la loop()
   delay(2000); // Attendre avant de mettre à jour l'affichage
-
-  digitalWrite(LED, LOW); // La LED s'éteint à la fin de la loop()
-
-  // if (DEBUG)
-  // {
-  //   delay(1000); // En DEBUG, les valeurs sont transmises toutes les secondes.
-  // }
-  // else
-  // {
-  //   lowPowerSleep(SLEEPING_TIME);
-  // }
 }

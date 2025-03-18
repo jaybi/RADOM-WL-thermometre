@@ -45,7 +45,7 @@ void initSerial(int speed)
     if (DEBUG)
     {
         Serial.begin(speed);
-        Serial.println("Setup...");
+        Serial.println(F("Initialisation..."));
     }
 }
 
